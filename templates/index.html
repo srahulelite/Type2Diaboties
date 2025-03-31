@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Risk Prediction</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 400px; margin: auto; }
+        h2 { text-align: center; }
+        form { display: flex; flex-direction: column; }
+        label { margin-top: 10px; }
+        input { padding: 8px; margin-top: 5px; }
+        button { margin-top: 15px; padding: 10px; background: blue; color: white; border: none; cursor: pointer; }
+        .result { margin-top: 20px; font-weight: bold; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Diabetes Risk Prediction</h2>
+        <form action="/predict" method="post">
+            <label>Age:</label>
+            <input type="number" name="Age" required>
+            
+            <label>BMI:</label>
+            <input type="number" name="BMI" step="0.1" required>
+            
+            <label>Fasting Glucose:</label>
+            <input type="number" name="Fasting Glucose" step="0.1" required>
+            
+            <label>HbA1c:</label>
+            <input type="number" name="HbA1c" step="0.1" required>
+            
+            <label>Blood Pressure Systolic:</label>
+            <input type="number" name="Blood Pressure Systolic" required>
+            
+            <label>Blood Pressure Diastolic:</label>
+            <input type="number" name="Blood Pressure Diastolic" required>
+            
+            <label>Physical Activity (0-10 scale):</label>
+            <input type="number" name="Physical Activity" min="0" max="10" required>
+            
+            <label>Diabetes History (0=No, 1=Yes):</label>
+            <input type="number" name="Diabetes History" min="0" max="1" required>
+            
+            <label>Smoker (0=No, 1=Yes):</label>
+            <input type="number" name="Smoker" min="0" max="1" required>
+            
+            <button type="submit">Predict Risk</button>
+        </form>
+        
+        {% if prediction %}
+            <div class="result">Prediction: {{ prediction }} ({{ probability|round(2) }}% confidence)</div>
+        {% endif %}
+    </div>
+</body>
+</html>

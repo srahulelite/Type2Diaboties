@@ -1,15 +1,29 @@
-from flask import Flask
+from flask import Flask, request, render_template
 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+import pickle
+
 app = Flask(__name__)
+
+# Load model and scaler if available
+try:
+    model = pickle.load(open("model.pkl", "rb"))
+    scaler = pickle.load(open("scaler.pkl", "rb"))
+except FileNotFoundError:
+    model, scaler = None, None
 
 @app.route("/")
 def home():
-    return "<p>Home Page</p>"
+    return render_template("index.html")
 
 
 @app.route("/gen")
@@ -95,6 +109,59 @@ def eda():
     plt.title('Feature Correlation Heatmap')
     plt.show()
     return "<p>EDA performed</p>"
+
+@app.route("/train")
+def train():
+    global model, scaler
+    
+    # Load the dataset
+    df = pd.read_csv('diabetes_dummy_data.csv')
+
+    # Selecting features and target variable
+    X = df.drop(columns=['Outcome'])
+    y = df['Outcome']
+
+    # Splitting into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+    # Standardizing the numerical features
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    # Model Training - Logistic Regression
+    model = LogisticRegression()
+    model.fit(X_train_scaled, y_train)
+
+    # Save model and scaler
+    pickle.dump(model, open("model.pkl", "wb"))
+    pickle.dump(scaler, open("scaler.pkl", "wb"))
+
+    # Predictions
+    y_pred = model.predict(X_test_scaled)
+
+    # Model Evaluation
+    accuracy = accuracy_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred)
+    
+    return f"Model trained! Accuracy: {accuracy:.2f} <br><pre>{report}</pre>"
+
+@app.route("/predict", methods=["POST"]) 
+def predict():
+    if not model or not scaler:
+        return "Model not trained yet! Please train first."
+    
+    # Get form data
+    form_data = [float(request.form[key]) for key in request.form.keys()]
+    
+    # Preprocess input
+    input_scaled = scaler.transform([form_data])
+    prediction = model.predict(input_scaled)[0]
+    probability = model.predict_proba(input_scaled)[0][1] * 100
+    
+    result = "Diabetes Risk High" if prediction == 1 else "Low Risk"
+    return render_template("index.html", prediction=result, probability=probability)
+
 
 
 
